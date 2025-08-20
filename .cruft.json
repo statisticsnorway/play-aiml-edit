@@ -1,0 +1,17 @@
+{
+  "template": "https://github.com/statisticsnorway/ssb-project-template-stat",
+  "commit": "3b07f730249681c2d2e0e5c8e9a255d9c3d6c900",
+  "checkout": "1.5.1",
+  "context": {
+    "cookiecutter": {
+      "full_name": "sjentoft",
+      "email": "susiejentoft@gmail.com",
+      "project_name": "play-aiml-edit",
+      "description": "Project repository for grant on AIML4OS related to WP10 - data editing.",
+      "license_year": "2025",
+      "_template": "https://github.com/statisticsnorway/ssb-project-template-stat",
+      "_commit": "3b07f730249681c2d2e0e5c8e9a255d9c3d6c900"
+    }
+  },
+  "directory": null
+}
