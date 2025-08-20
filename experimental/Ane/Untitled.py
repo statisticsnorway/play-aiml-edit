@@ -18,6 +18,9 @@ import pandas as pd
 import numpy as np
 
 # %%
+import os
+
+# %%
 file_path = "/buckets/shared/vare-tjen-korttid/vhi-aiml/vhi-data/utvalgsdata/utvalg_p2024-07_v1.parquet"
 
 # %%
@@ -43,5 +46,31 @@ df3 = pd.read_parquet(file_path)
 
 # %%
 df3
+
+# %%
+file_path = "/buckets/shared/vare-tjen-korttid/vhi-aiml/vhi-data/"
+
+# %%
+files = os.listdir(file_path)
+
+# %%
+files
+
+# %%
+for file in files:
+    print(file)
+
+# %%
+file_path = "/buckets/shared/vare-tjen-korttid/vhi-aiml/vhi-data/utvalgsdata"
+
+# %%
+files = os.listdir(file_path)
+
+# %%
+files
+
+# %%
+for file in files:
+    print(file)
 
 # %%
