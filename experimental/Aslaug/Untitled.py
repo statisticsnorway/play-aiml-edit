@@ -58,7 +58,8 @@ df3
 
 # %%
 teller = df3['nace_sitfil'].str[:2].value_counts()
-teller
+pd.set_option('display.max_rows', None)
+print(teller)
 
 # %% [markdown]
 # ### Ser på hvilke områder som ligger under området vhi-data:
