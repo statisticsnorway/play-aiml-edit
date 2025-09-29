@@ -56,6 +56,10 @@ df3 = pd.read_parquet(file_path)
 # %%
 df3
 
+# %%
+teller = df3['nace_sitfil'].str[:2].value_counts()
+teller
+
 # %% [markdown]
 # ### Ser på hvilke områder som ligger under området vhi-data:
 
