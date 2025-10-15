@@ -1,52 +1,45 @@
-import pandas as pd
-import numpy as np
+import time
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score, accuracy_score
 
+from base_model import BaseModel
+from create_accumulation_error import AccumulationErrors
+from load_data import get_all_data
 from time_features import create_features, prepare_data
 from config import Config  # pyright: ignore[reportAttributeAccessIssue]
 
-class AccumulationIsoFor:
+class AccumulationIsoFor(BaseModel):
     """
-    Simple data preparation for detecting accumulation errors with Isolation Forest.
-    Focuses on the most important features only.
-    """
-    
-    def __init__(
-        self, df, cfg, date_col="date", company_col="company_name",
-        turnover_col="turnover", error_col="contains_error"
-    ):
-        self.df = df.copy()
-        self.cfg = cfg
-        self.date_col = date_col
-        self.company_col = company_col
-        self.turnover_col = turnover_col
-        self.error_col = error_col
+    Testing av Isolation forest for akkumuleringsfeil.
 
-        self.df[date_col] = pd.to_datetime(self.df[date_col])
-        self.df = self.df.sort_values([company_col, date_col]).reset_index(drop=True)
-    
-    def fit_predict(self, feature_cols=None, contamination=0.02, random_state=42):
-        X_train, X_valid, y_train, y_valid, feature_cols = prepare_data(
+    Forbedringer
+    - normalisering på bedriftsnivå
+    - parametertuning
+    - se på anomaly scores
+    """
+    def fit_predict(self, n_estimators=100, contamination=None, random_state=42):
+        X_train, X_valid, y_train, y_valid, _ = prepare_data(
             df=df,
             cfg=self.cfg,
-            feature_cols=feature_cols
         )
+
+        self._statistics(
+            X_train, y_train, X_valid, y_valid
+        )
+
+        if contamination is None or contamination == "train":
+            contamination = self.train_error_rate
         
         self.model = IsolationForest(
+            n_estimators=n_estimators,
             contamination=contamination,  # pyright: ignore[reportArgumentType]
             random_state=random_state,
-            n_estimators=100
         )
         self.model.fit(X=X_train)
         
         predictions = self.model.predict(X=X_valid)
         scores = self.model.score_samples(X=X_valid)
-        
         y_pred = (predictions == -1).astype(int)
 
-        print(f"Training set: {len(X_train)} samples, {y_train.sum()} errors ({y_train.mean():.3%})")
-        print(f"Validation set: {len(X_valid)} samples, {y_valid.sum()} errors ({y_valid.mean():.3%})")
         return {
             "y_true": y_valid.values,  # pyright: ignore[reportAttributeAccessIssue]
             "y_pred": y_pred,
@@ -54,24 +47,13 @@ class AccumulationIsoFor:
             "X_valid": X_valid
         }
     
-    def metrics(self, y_true, y_pred, beta=2.0):
-        metrics = {
-            "f1_score": f1_score(y_true, y_pred, zero_division=0.0),  # pyright: ignore[reportArgumentType]
-            "f2_score": fbeta_score(y_true, y_pred, beta=2.0, zero_division=0.0),  # pyright: ignore[reportArgumentType]
-            f"f{beta}_score": fbeta_score(y_true, y_pred, beta=beta, zero_division=0.0),  # pyright: ignore[reportArgumentType]
-            "precision": precision_score(y_true, y_pred, zero_division=0.0),  # pyright: ignore[reportArgumentType]
-            "recall": recall_score(y_true, y_pred, zero_division=0.0),  # pyright: ignore[reportArgumentType]
-        }
-
-        return metrics
-    
-    def evaluate(self, split_date, contamination=0.02, random_state=42, beta=2.0):
+    def evaluate(self, contamination=0.02, random_state=42, beta=2.0):
         results = self.fit_predict(
             contamination=contamination, 
             random_state=random_state
         )
     
-        metrics = self.metrics(
+        metrics = self._metrics(
             y_true=results["y_true"], 
             y_pred=results["y_pred"],
             beta=beta
@@ -79,30 +61,53 @@ class AccumulationIsoFor:
 
         return metrics
 
-
 if __name__ == "__main__":
-    df = pd.read_csv("experimental/Ruben/src/accumulation_error.csv")
+    time_start = time.time()
+
+    print("Henter ut data fra VHI")
+    hent_data = get_all_data(Config)
     
-    print("Lager tidsvariabler:")
+    print("Lager akkumuleringsfeil")
+    make_errors = AccumulationErrors(
+        cfg=Config,
+        years=Config.years,
+        type_of_errors=Config.acc_errors,
+        total_error_prct=0.25 # må se nærmere på denne variabelen, introduserer rundt 1-5% med total_error_prct=0.05-0.30 
+    )
+    
+    df = make_errors.create_accumulation_errors(hent_data)
+    
+    print("Lager tidsvariabler")
     df = create_features(
         df=df,
-        company_col=Config.company_col,
-        turnover_col=Config.turnover_col,
-        date_col=Config.date_col,
-    )
-    prep = AccumulationIsoFor(
-        df=df,
-        cfg=Config,
-        date_col=Config.date_col,
-        company_col=Config.company_col,
-        turnover_col=Config.turnover_col,
-        error_col=Config.error_col
+        bedrift=Config.bedrift,
+        omsetning=Config.omsetning,
+        dato=Config.dato,
+        min_periods=Config.min_periods
     )
 
+    print("Trener Isolation Forest")
+    prep = AccumulationIsoFor(df, Config)
     
-    contamination = 0.035
-    print(contamination)
-    split_date = "2024-01-01"
-    metrics = prep.evaluate(contamination=contamination, split_date=split_date, beta=0.5)
-
+    contamination = 0.01
+    print(f"Isolation forest med contamination: {contamination}")
+    metrics = prep.evaluate(contamination=contamination)
     print(metrics)
+
+    contamination = 0.03
+    print(f"Isolation forest med contamination: {contamination}")
+    metrics = prep.evaluate(contamination=contamination)
+    print(metrics)
+
+    contamination = 0.05
+    print(f"Isolation forest med contamination: {contamination}")
+    metrics = prep.evaluate(contamination=contamination)
+    print(metrics)
+
+    contamination = "train"
+    print(f"Isolation forest med contamination: {contamination}")
+    metrics = prep.evaluate(contamination=contamination)  # pyright: ignore[reportArgumentType]
+    print(metrics)
+
+    time_end = time.time()
+    print(f"Tid: {(time_end - time_start) / 60} minutter")

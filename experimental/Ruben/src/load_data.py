@@ -16,3 +16,11 @@ def load_data_year(path, mappe, year):
     ]
 
     return pd.concat(files, ignore_index=True)
+
+
+def get_all_data(cfg):
+    all_data = [
+        load_data_year(path=cfg.project_name, mappe=cfg.mappe_utvalg, year=x) for x in cfg.years
+    ]
+    df = pd.concat(all_data, ignore_index=True)
+    return df

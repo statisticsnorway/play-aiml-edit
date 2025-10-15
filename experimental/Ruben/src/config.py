@@ -6,11 +6,11 @@ class Config:
 
     # Variabler
     years = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
-    company_col = "orgnrb"
-    turnover_col = "oms"
-    date_col = "periode"
-    error_col = "contains_error"
-    acc_errors = ["cumulative_sum", "cascading", "intermittent"]
+    bedrift = "orgnrb"
+    omsetning = "oms"
+    dato = "periode"
+    error_col = "har_feil"
+    acc_errors = ["cumulative_sum", "cascading", "random"]
 
     # Modell parametere
     min_periods = 1
