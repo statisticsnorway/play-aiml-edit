@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+from load_data import get_all_data
+from config import Config  # pyright: ignore[reportAttributeAccessIssue]
+
 class AccumulationErrors:
     def __init__(self, cfg, years, type_of_errors, total_error_prct):
         self.cfg = cfg
@@ -112,3 +115,18 @@ class AccumulationErrors:
                 result[i] = values[i]
         
         return result
+
+
+if __name__ == "__main__":
+    print("Henter ut data fra VHI")
+    hent_data = get_all_data(cfg=Config)
+    
+    print("Lager akkumuleringsfeil")
+    make_errors = AccumulationErrors(
+        cfg=Config,
+        years=Config.years,
+        type_of_errors=Config.acc_errors,
+        total_error_prct=0.25 # må se nærmere på denne variabelen, introduserer rundt 1-5% med total_error_prct=0.05-0.30 
+    )
+    
+    df = make_errors.create_accumulation_errors(df=hent_data)

@@ -67,7 +67,7 @@ class AccumulationLGBM(BaseModel):
         self.model.fit(
             X=X_train, y=y_train,
             eval_set=[(X_valid, y_valid)],
-            eval_metric='auc',
+            eval_metric='average_precision',
             callbacks=[lgb.early_stopping(stopping_rounds=50, verbose=False)]
         )
 
