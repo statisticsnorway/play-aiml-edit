@@ -65,7 +65,7 @@ if __name__ == "__main__":
     time_start = time.time()
 
     print("Henter ut data fra VHI")
-    hent_data = get_all_data(Config)
+    hent_data = get_all_data(cfg=Config)
     
     print("Lager akkumuleringsfeil")
     make_errors = AccumulationErrors(
@@ -87,27 +87,15 @@ if __name__ == "__main__":
     )
 
     print("Trener Isolation Forest")
-    prep = AccumulationIsoFor(df, Config)
-    
-    contamination = 0.01
-    print(f"Isolation forest med contamination: {contamination}")
-    metrics = prep.evaluate(contamination=contamination)
-    print(metrics)
+    prep = AccumulationIsoFor(df, cfg=Config)
 
-    contamination = 0.03
-    print(f"Isolation forest med contamination: {contamination}")
-    metrics = prep.evaluate(contamination=contamination)
-    print(metrics)
+    contamination = [0.01, 0.03, 0.05, "train"]
 
-    contamination = 0.05
-    print(f"Isolation forest med contamination: {contamination}")
-    metrics = prep.evaluate(contamination=contamination)
-    print(metrics)
+    for cont in contamination:
+        metrics = prep.evaluate(contamination=cont)
 
-    contamination = "train"
-    print(f"Isolation forest med contamination: {contamination}")
-    metrics = prep.evaluate(contamination=contamination)  # pyright: ignore[reportArgumentType]
-    print(metrics)
+        print(f"Isolation forest med contamination {cont}: {metrics}")
+        # print(metrics)
 
     time_end = time.time()
     print(f"Tid: {(time_end - time_start) / 60} minutter")

@@ -27,7 +27,7 @@ class AccumulationLGBM(BaseModel):
     """
     def fit_predict(
         self, learning_rate=0.05, num_leaves=31, max_depth=-1, min_child_samples=20, 
-        n_estimators=100, scale_pos_weight=None, statistics=False
+        n_estimators=100, scale_pos_weight=None
     ):
 
         X_train, X_valid, y_train, y_valid, feature_cols = prepare_data(
@@ -35,10 +35,9 @@ class AccumulationLGBM(BaseModel):
             cfg=self.cfg,
         )
 
-        if statistics:
-            self._statistics(
-                X_train, y_train, X_valid, y_valid
-            )
+        self._statistics(
+            X_train, y_train, X_valid, y_valid
+        )
         
         if scale_pos_weight is None:
             n_negative = (y_train == 0).sum()
