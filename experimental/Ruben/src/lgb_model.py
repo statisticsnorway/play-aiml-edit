@@ -31,7 +31,7 @@ class AccumulationLGBM(BaseModel):
     
     def optimize_hyperparameters(self, max_evals=100, beta=0.5):
         space = {
-            'n_estimators': hp.choice('n_estimators', range(500, 1501)),
+            'n_estimators': hp.choice('n_estimators', range(500, 1001)),
             'learning_rate': hp.uniform('learning_rate',0.001, 0.10),
             'max_depth': hp.choice('max_depth', range(5, 9)),
             'num_leaves': hp.choice('num_leaves', range(5, 127)),
@@ -54,7 +54,7 @@ class AccumulationLGBM(BaseModel):
                 )
 
                 # f1_score, f2_score, f0.5_score, precision, recall
-                loss = -metrics["f0.5_score"]
+                loss = -(metrics["f0.5_score"] + metrics["f1_score"]) / 2
                 
                 return {
                     'loss': loss,
@@ -82,7 +82,6 @@ class AccumulationLGBM(BaseModel):
         for key, value in best_params.items():
             print(f"{key}: {value}")
         
-        # Lagre beste parametere
         self.best_params = best_params
         
         return best_params
@@ -120,7 +119,7 @@ class AccumulationLGBM(BaseModel):
 
         y_pred = self.model.predict(X=X_valid)
         
-        self.feature_importance = pd.DataFrame({
+        self.feature_importance = pd.DataFrame(data={
             'feature': feature_cols,
             'importance': self.model.feature_importances_
         }).sort_values('importance', ascending=False)
