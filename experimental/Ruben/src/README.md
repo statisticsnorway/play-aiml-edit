@@ -2,7 +2,7 @@
 
 
 ### config.py
-- Python klassen Config har oversikt over ulike parametere (bøtter, kolonner i datasett, hvilke år vi skal se på, type akkumuleringsfeil, splitting av trening/validering)
+- Python klassen Config har oversikt over ulike parametere (bøtter, kolonner i datasett, hvilke år vi skal se på, type akkumuleringsfeil, startmåned for akkumuleringsfeil med sannsynlighet, splitting av trening/validering)
 
 ### load_data.py
 - load_data_year henter ut VHI data for et gitt år og lagrer det som en Pandas dataframe. 
@@ -13,7 +13,10 @@
     - Kumulativ sum (cumulative_sum)
     - Kaskadefeil (cascading_error)
     - Tilfeldig feil (random)
+    Startmåneden Januar blir valgt med sannsynlighet 0.95. Denne verdien kan bli endret i config.
 
+
+Merk at Januar ikke har akkumuleringsfeil i seg selv, men viser antall som har blitt valgt ut/startmåned. 
 ![Figur](figurer/error_analysis_report.png)
 
 
@@ -28,4 +31,4 @@
 - Isolation forest. Prøve ulike forbedringer, blant annet normalisere på bedriftsnivå og parametersøk. 
 
 ### lgb_model.py
-- LightGBM. Foreløpig ikke kryssvalidering eller parametersøk. 
+- LightGBM. Foreløpig ikke kryssvalidering

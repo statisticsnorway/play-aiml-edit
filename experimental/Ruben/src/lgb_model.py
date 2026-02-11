@@ -25,7 +25,6 @@ class AccumulationLGBM(BaseModel):
 
     Forbedringer
     - kryssvalidering
-    - parametertuning med hyperopt
     - test ut en annen metric
     """
     
@@ -76,11 +75,11 @@ class AccumulationLGBM(BaseModel):
             verbose=1
         )
         
-        print("\n" + "="*50)
-        print("BESTE HYPERPARAMETERE:")
-        print("="*50)
-        for key, value in best_params.items():
-            print(f"{key}: {value}")
+        # print("\n" + "="*50)
+        # print("BESTE HYPERPARAMETERE:")
+        # print("="*50)
+        # for key, value in best_params.items():
+        #     print(f"{key}: {value}")
         
         self.best_params = best_params
         
@@ -135,8 +134,6 @@ class AccumulationLGBM(BaseModel):
 
         best_params = self.optimize_hyperparameters(max_evals=max_evals, beta=beta)
         kwargs.update(best_params)
-
-        print(kwargs)
         
         results = self.fit_predict(**kwargs)
         
@@ -167,7 +164,7 @@ if __name__ == "__main__":
         cfg=Config,
         years=Config.years,
         type_of_errors=Config.acc_errors,
-        total_error_prct=0.25 # må se nærmere på denne variabelen, introduserer rundt 1-5% med total_error_prct=0.05-0.30 
+        total_error_prct=0.25
     )
     
     df = make_errors.create_accumulation_errors(df=hent_data)
