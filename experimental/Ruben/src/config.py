@@ -12,6 +12,10 @@ class Config:
     error_col = "har_feil"
     acc_errors = ["cumulative_sum", "cascading", "random"]
 
+    # Startmåned for akkumuleringsfeil
+    start_month = 1
+    start_month_prob = 0.95
+
     # Modell parametere
     min_periods = 1
     split_date = "2024-01-01"

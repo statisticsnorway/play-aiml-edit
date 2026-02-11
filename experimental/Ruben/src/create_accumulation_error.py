@@ -33,8 +33,29 @@ class AccumulationErrors:
         
         for org in orgs_with_errors:
             result_df = self._apply_error_to_org(result_df, org)
+        
         result_df[self.cfg.error_col] = (result_df[self.cfg.omsetning] != result_df[self.original_value]).astype(int)
+        
         return result_df
+    
+    def _get_start_idx(self, org_data):
+        use_preferred_month = np.random.random() < self.cfg.start_month_prob
+        
+        if use_preferred_month and self.cfg.start_month > 0:
+            months = org_data[self.cfg.dato].dt.month.values
+            
+            matching_positions = np.where(months == self.cfg.start_month)[0]
+            
+            valid_positions = matching_positions[matching_positions <= len(org_data) - 3]
+            
+            if len(valid_positions) > 0:
+                selected_pos = np.random.choice(valid_positions)                
+                
+                return selected_pos
+        
+        random_pos = np.random.randint(0, len(org_data) - 2)
+
+        return random_pos
     
     def _apply_error_to_org(self, df, org):
         org_mask = df[self.cfg.bedrift] == org
@@ -44,11 +65,14 @@ class AccumulationErrors:
             return df
         
         error_type = np.random.choice(self.type_of_errors)
-        start_idx = np.random.randint(0, len(org_data) - 2)
+        
+        start_idx = self._get_start_idx(org_data)
+        
+        # Hvor mange måneder akkumuleringsfeil vil vare
         max_duration = min(12, len(org_data) - start_idx)
         duration = np.random.randint(3, max_duration + 1)
-        
         end_idx = start_idx + duration
+        
         error_indices = org_data.index[start_idx:end_idx]
         
         if error_type == 'cumulative_sum':
@@ -71,49 +95,29 @@ class AccumulationErrors:
         return df
 
     def _cumulative(self, values):
-        """
-        Eksempel på hvordan cumulative fungerer:
-        Jan: 100
-        Feb: 150 -> Jan + 150 = 250
-        Mars: 170 -> Jan + Feb + 170 = 420
-        """
+        """Cumulative sum error"""
         result = np.zeros(len(values))
-        
         for i in range(len(values)):
             result[i] = np.sum(values[:i+1])
-        
         return result
     
     def _cascading(self, values):
-        """
-        Eksempel på hvordan cascading fungerer:
-        Jan: 100
-        Feb: 150 -> Jan + 150 = 250
-        Mars: 170 -> Jan + Feb_error + 170 = 100 + 250 + 170 = 520
-        """
+        """Cascading error"""
         result = np.zeros(len(values))
         result[0] = values[0]
-        
         for i in range(1, len(values)):
             result[i] = np.sum(result[:i]) + values[i]
-        
         return result
 
     def _random(self, values, error_probability=0.3):
-        """
-        Eksempel på hvordan random fungerer:
-        Noen korrekte måneder, noen feil.
-        De som er feil vil få samme feil som cumulative_sum_error
-        """
+        """Random error"""
         result = np.zeros(len(values))
         result[0] = values[0]
-        
         for i in range(1, len(values)):
             if np.random.random() < error_probability:
                 result[i] = np.sum(values[:i+1])
             else:
                 result[i] = values[i]
-        
         return result
 
 
