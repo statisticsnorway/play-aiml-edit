@@ -72,7 +72,7 @@ if __name__ == "__main__":
         cfg=Config,
         years=Config.years,
         type_of_errors=Config.acc_errors,
-        total_error_prct=0.25 # må se nærmere på denne variabelen, introduserer rundt 1-5% med total_error_prct=0.05-0.30 
+        total_error_prct=Config.bedrifter_med_feil
     )
     
     df = make_errors.create_accumulation_errors(hent_data)

@@ -75,12 +75,6 @@ class AccumulationLGBM(BaseModel):
             verbose=1
         )
         
-        # print("\n" + "="*50)
-        # print("BESTE HYPERPARAMETERE:")
-        # print("="*50)
-        # for key, value in best_params.items():
-        #     print(f"{key}: {value}")
-        
         self.best_params = best_params
         
         return best_params
@@ -94,7 +88,7 @@ class AccumulationLGBM(BaseModel):
             cfg=self.cfg,
         )
 
-        # self._statistics(X_train, y_train, X_valid, y_valid)
+        self._statistics(X_train, y_train, X_valid, y_valid)
         
         if scale_pos_weight is None:
             n_negative = (y_train == 0).sum()
@@ -130,7 +124,7 @@ class AccumulationLGBM(BaseModel):
             "feature_importance": self.feature_importance
         }
     
-    def evaluate(self, beta=0.5, show_feature_importance=True, top_n=15, max_evals=100, **kwargs):
+    def evaluate(self, beta=0.5, show_feature_importance=True, top_n=15, max_evals=10, **kwargs):
 
         best_params = self.optimize_hyperparameters(max_evals=max_evals, beta=beta)
         kwargs.update(best_params)
@@ -164,7 +158,7 @@ if __name__ == "__main__":
         cfg=Config,
         years=Config.years,
         type_of_errors=Config.acc_errors,
-        total_error_prct=0.25
+        total_error_prct=Config.bedrifter_med_feil
     )
     
     df = make_errors.create_accumulation_errors(df=hent_data)

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from load_data import get_all_data
-from config import Config  # pyright: ignore[reportAttributeAccessIssue]
+from config import Config
 
 class AccumulationErrors:
     def __init__(self, cfg, years, type_of_errors, total_error_prct):
@@ -17,6 +17,7 @@ class AccumulationErrors:
         self.original_value = f"{self.cfg.omsetning}_original"
         result_df[self.original_value] = result_df[self.cfg.omsetning]
         result_df['error_type'] = None
+        result_df['error_year'] = None
         
         result_df[self.cfg.dato] = pd.to_datetime(result_df[self.cfg.dato])
         
@@ -32,68 +33,97 @@ class AccumulationErrors:
         )
         
         for org in orgs_with_errors:
-            result_df = self._apply_error_to_org(result_df, org)
+            result_df = self._apply_errors_to_org(result_df, org)
         
         result_df[self.cfg.error_col] = (result_df[self.cfg.omsetning] != result_df[self.original_value]).astype(int)
         
         return result_df
     
-    def _get_start_idx(self, org_data):
-        use_preferred_month = np.random.random() < self.cfg.start_month_prob
-        
-        if use_preferred_month and self.cfg.start_month > 0:
-            months = org_data[self.cfg.dato].dt.month.values
-            
-            matching_positions = np.where(months == self.cfg.start_month)[0]
-            
-            valid_positions = matching_positions[matching_positions <= len(org_data) - 3]
-            
-            if len(valid_positions) > 0:
-                selected_pos = np.random.choice(valid_positions)                
-                
-                return selected_pos
-        
-        random_pos = np.random.randint(0, len(org_data) - 2)
-
-        return random_pos
-    
-    def _apply_error_to_org(self, df, org):
+    def _apply_errors_to_org(self, df, org):
+        """Apply one error per year to an organization"""
         org_mask = df[self.cfg.bedrift] == org
         org_data = df[org_mask].sort_values(self.cfg.dato).copy()
         
         if len(org_data) < 3:
             return df
         
+        available_years = org_data[self.cfg.dato].dt.year.unique()
+        
+        if self.cfg.multiple_error_years:
+            years_with_errors = []
+            for year in available_years: 
+                if np.random.random() < self.cfg.error_year_probability:
+                    years_with_errors.append(year)
+            
+            # TODO: muligens endre denne slik at mulighet for ikke feil i år
+            if len(years_with_errors) == 0:
+                years_with_errors = [np.random.choice(available_years)]
+        else:
+            years_with_errors = [np.random.choice(available_years)]
+        
+        for year in years_with_errors:
+            df = self._apply_error_to_year(df, org, org_data, year)
+        
+        return df
+    
+    def _apply_error_to_year(self, df, org, org_data, year):
+        year_mask = org_data[self.cfg.dato].dt.year == year
+        year_data = org_data[year_mask].copy()
+        
+        if len(year_data) < 3:
+            return df
+        
+        start_idx = self._get_start_idx_in_year(year_data, org_data)
+        
+        months_left_in_year = len(year_data) - (start_idx - year_data.index.get_loc(year_data.index[0]))
+        max_duration = min(12, months_left_in_year)
+        
+        if max_duration < 3:
+            return df
+        
+        duration = np.random.randint(3, max_duration + 1)
+
+        start_pos_in_full = org_data.index.get_loc(year_data.index[start_idx])
+        end_pos_in_full = start_pos_in_full + duration
+        
+        error_indices = org_data.index[start_pos_in_full:end_pos_in_full]
+        
         error_type = np.random.choice(self.type_of_errors)
         
-        start_idx = self._get_start_idx(org_data)
-        
-        # Hvor mange måneder akkumuleringsfeil vil vare
-        max_duration = min(12, len(org_data) - start_idx)
-        duration = np.random.randint(3, max_duration + 1)
-        end_idx = start_idx + duration
-        
-        error_indices = org_data.index[start_idx:end_idx]
+        original_values = df.loc[error_indices, self.original_value].values
         
         if error_type == 'cumulative_sum':
-            modified_values = self._cumulative(
-                org_data.iloc[start_idx:end_idx][self.original_value].values
-            )
+            modified_values = self._cumulative(original_values)
         elif error_type == 'cascading':
-            modified_values = self._cascading(
-                org_data.iloc[start_idx:end_idx][self.original_value].values
-            )
+            modified_values = self._cascading(original_values)
         elif error_type == 'random':
-            modified_values = self._random(
-                org_data.iloc[start_idx:end_idx][self.original_value].values,
-                error_probability=0.3
-            )
+            modified_values = self._random(original_values, error_probability=0.5)
         
         df.loc[error_indices, self.cfg.omsetning] = modified_values
         df.loc[error_indices, 'error_type'] = error_type
+        df.loc[error_indices, 'error_year'] = year
         
         return df
-
+    
+    def _get_start_idx_in_year(self, year_data, full_org_data):
+        """Get start index within a specific year's data"""
+        use_preferred_month = np.random.random() < self.cfg.start_month_prob
+        
+        if use_preferred_month and self.cfg.start_month > 0:
+            months = year_data[self.cfg.dato].dt.month.values
+            matching_positions = np.where(months == self.cfg.start_month)[0]
+            
+            # Need enough space after start position
+            valid_positions = matching_positions[matching_positions <= len(year_data) - 3]
+            
+            if len(valid_positions) > 0:
+                # Return position relative to year_data
+                return valid_positions[0]  # Take first January (if multiple exist)
+        
+        # Random position within the year
+        max_start = max(0, len(year_data) - 3)
+        return np.random.randint(0, max_start + 1) if max_start > 0 else 0
+    
     def _cumulative(self, values):
         """Cumulative sum error"""
         result = np.zeros(len(values))
@@ -130,7 +160,7 @@ if __name__ == "__main__":
         cfg=Config,
         years=Config.years,
         type_of_errors=Config.acc_errors,
-        total_error_prct=0.25 # må se nærmere på denne variabelen, introduserer rundt 1-5% med total_error_prct=0.05-0.30 
+        total_error_prct=Config.bedrifter_med_feil
     )
     
     df = make_errors.create_accumulation_errors(df=hent_data)

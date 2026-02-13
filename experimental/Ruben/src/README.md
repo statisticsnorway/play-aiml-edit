@@ -17,7 +17,7 @@
 
 
 Merk at Januar ikke har akkumuleringsfeil i seg selv, men viser antall som har blitt valgt ut/startmåned. 
-![Figur](figurer/error_analysis_report.png)
+![Figur](figurer/accumulation_error.png)
 
 
 
