@@ -113,14 +113,11 @@ class AccumulationErrors:
             months = year_data[self.cfg.dato].dt.month.values
             matching_positions = np.where(months == self.cfg.start_month)[0]
             
-            # Need enough space after start position
             valid_positions = matching_positions[matching_positions <= len(year_data) - 3]
             
             if len(valid_positions) > 0:
-                # Return position relative to year_data
-                return valid_positions[0]  # Take first January (if multiple exist)
+                return valid_positions[0]
         
-        # Random position within the year
         max_start = max(0, len(year_data) - 3)
         return np.random.randint(0, max_start + 1) if max_start > 0 else 0
     
