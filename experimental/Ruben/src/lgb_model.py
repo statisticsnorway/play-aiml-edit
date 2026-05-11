@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import lightgbm as lgb
 from sklearn.metrics import f1_score
-from hyperopt import hp, fmin, tpe, Trials, STATUS_OK
+from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 
 
 from base_model import BaseModel
@@ -11,6 +11,7 @@ from create_accumulation_error import AccumulationErrors
 from load_data import get_all_data
 from time_features import create_features, prepare_data
 from config import Config  # pyright: ignore[reportAttributeAccessIssue]
+from post_processing import postprocess_consecutive
 
 def f1_eval_metric(preds, train_data):
     labels = train_data.get_label()
@@ -20,18 +21,11 @@ def f1_eval_metric(preds, train_data):
 
 
 class AccumulationLGBM(BaseModel):
-    """
-    Testing av LightGBM for akkumuleringsfeil.
-
-    Forbedringer
-    - kryssvalidering
-    - test ut en annen metric
-    """
-    
+    """Testing av LightGBM for akkumuleringsfeil."""
     def optimize_hyperparameters(self, max_evals=100, beta=0.5):
         space = {
             'n_estimators': hp.choice('n_estimators', range(500, 1001)),
-            'learning_rate': hp.uniform('learning_rate',0.001, 0.10),
+            'learning_rate': hp.uniform('learning_rate', 0.001, 0.10),
             'max_depth': hp.choice('max_depth', range(5, 9)),
             'num_leaves': hp.choice('num_leaves', range(5, 127)),
             'colsample_bytree': hp.uniform('colsample_bytree', 0.5, 1),
@@ -41,7 +35,7 @@ class AccumulationLGBM(BaseModel):
             'subsample_freq': hp.choice('subsample_freq', range(1,10)),
             'min_child_samples': hp.choice('min_data_in_leaf', range(20,100)), 
         }
-        
+
         def objective(params):
             try:
                 results = self.fit_predict(**params)
@@ -52,13 +46,16 @@ class AccumulationLGBM(BaseModel):
                     beta=beta
                 )
 
-                # f1_score, f2_score, f0.5_score, precision, recall
-                loss = -(metrics["f0.5_score"] + metrics["f1_score"]) / 2
+                if self.greater_is_better:
+                    loss = -(metrics[self.eval_metric])
+                else:
+                    loss = metrics[self.eval_metric]
                 
                 return {
                     'loss': loss,
                     'status': STATUS_OK,
-                    'metrics': metrics
+                    'metrics': metrics,
+                    "params": params,
                 }
             except Exception as e:
                 print(f"Feil med parametere: {params}")
@@ -66,7 +63,7 @@ class AccumulationLGBM(BaseModel):
                 return {'loss': 1.0, 'status': STATUS_OK}
         
         trials = Trials()
-        best_params = fmin(
+        best_idx = fmin(
             fn=objective,
             space=space,
             algo=tpe.suggest,
@@ -74,7 +71,7 @@ class AccumulationLGBM(BaseModel):
             trials=trials,
             verbose=1
         )
-        
+        best_params = space_eval(space, hp_assignment=best_idx)
         self.best_params = best_params
         
         return best_params
@@ -84,11 +81,13 @@ class AccumulationLGBM(BaseModel):
     ):
 
         X_train, X_valid, y_train, y_valid, feature_cols = prepare_data(
-            df=df,
+            df=self.df,
             cfg=self.cfg,
         )
 
-        self._statistics(X_train, y_train, X_valid, y_valid)
+        if self.call:
+            self._statistics(X_train, y_train, X_valid, y_valid)
+            self.call = False
         
         if scale_pos_weight is None:
             n_negative = (y_train == 0).sum()
@@ -124,7 +123,7 @@ class AccumulationLGBM(BaseModel):
             "feature_importance": self.feature_importance
         }
     
-    def evaluate(self, beta=0.5, show_feature_importance=True, top_n=15, max_evals=10, **kwargs):
+    def evaluate(self, beta=0.5, show_feature_importance=True, top_n=15, max_evals=100, **kwargs):
 
         best_params = self.optimize_hyperparameters(max_evals=max_evals, beta=beta)
         kwargs.update(best_params)
@@ -137,14 +136,35 @@ class AccumulationLGBM(BaseModel):
             beta=beta
         )
         
-        pred_rate = np.sum(results["y_pred"]) / len(results["y_pred"])
-        true_rate = np.sum(results["y_true"]) / len(results["y_true"])
-        print(f"\nPredikert feil: {pred_rate:.3f}, Faktisk feil: {true_rate:.3f}")
+        y_pred_filtered = postprocess_consecutive(
+            df=self.df[self.df[self.cfg.dato] >= pd.to_datetime(self.cfg.split_date)].reset_index(drop=True),
+            y_pred=results["y_pred"],
+            cfg=self.cfg,
+            min_duration=self.cfg.min_duration,
+            max_duration=self.cfg.max_duration,
+        )
+
+        metrics_filtered = self._metrics(
+            y_true=results["y_true"],
+            y_pred=y_pred_filtered,
+            beta=beta,
+        )
+
         
         if show_feature_importance and self.feature_importance is not None:
             print(f"\nTopp {top_n} variabler:")
             print(self.feature_importance.head(n=top_n).to_string(index=False))
-        
+
+        print("Resultater før post-processing")
+        for k, v in metrics.items():
+            print(f"  {k}: {v:.4f}")
+
+        print("Resultater etter post-processing:")
+        for k, v in metrics_filtered.items():
+            print(f"  {k}: {v:.4f}")
+
+        # n_removed = int(results["y_pred"].sum() - y_pred_filtered.sum())
+            
         return metrics, results
 
 if __name__ == "__main__":
@@ -158,8 +178,9 @@ if __name__ == "__main__":
         cfg=Config,
         years=Config.years,
         type_of_errors=Config.acc_errors,
-        total_error_prct=Config.bedrifter_med_feil
-    )
+        total_error_prct=Config.bedrifter_med_feil,
+        seed=Config.seed
+    )   
     
     df = make_errors.create_accumulation_errors(df=hent_data)
     
@@ -176,9 +197,6 @@ if __name__ == "__main__":
 
     print("Trener LightGBM")
     metrics, results = lgbm_detector.evaluate()
-
-    for k, v in metrics.items():
-        print(f"  {k}: {v:.4f}")
 
     time_end = time.time()
     print(f"Tid: {(time_end - time_start) / 60} minutter")

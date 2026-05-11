@@ -70,3 +70,31 @@ def prepare_data(df, cfg):
     y_valid = Y[valid_mask]
 
     return X_train, X_valid, y_train, y_valid, feature_cols
+
+def normalize_by_company(df_train, df_valid, bedrift, omsetning):
+    absolute_features = [
+        omsetning,
+        "mom_change", "yoy_change",
+        "rolling_mean_3m", "rolling_mean_6m", "rolling_mean_9m", "rolling_mean_12m",
+        "rolling_median_3m", "rolling_median_6m", "rolling_median_9m", "rolling_median_12m",
+        "turnover_lag_1", "turnover_lag_2", "turnover_lag_3", "turnover_lag_6", "turnover_lag_12",
+        "turnover_last_year",
+    ]
+    
+    company_scale = (
+        df_train
+        .groupby(bedrift)[omsetning]
+        .median()
+        .abs()
+        .rename("company_scale")
+    )
+    global_scale = df_train[omsetning].median()
+    
+    def _apply_scale(df):
+        df = df.copy()
+        scale = df[bedrift].map(company_scale).fillna(global_scale).clip(lower=1e-6)
+        cols_present = [c for c in absolute_features if c in df.columns]
+        df[cols_present] = df[cols_present].div(scale, axis=0)
+        return df
+    
+    return _apply_scale(df_train), _apply_scale(df_valid)

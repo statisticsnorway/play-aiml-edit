@@ -9,8 +9,10 @@ class AccumulationErrorVisualizer:
         self.cfg = cfg
         self.original_col = f"{cfg.omsetning}_original"
 
-        self.month_names = ['Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni', 
-                       'Juli', 'August', 'September', 'Oktober', 'November', 'Desember']
+        self.month_names = [
+            'Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni', 
+            'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'
+        ]
         
     def create_error_report(self, save_path=None, figsize=(16, 10)):
         fig, axes = plt.subplots(2, 2, figsize=figsize)
@@ -39,7 +41,7 @@ class AccumulationErrorVisualizer:
         ax.set_xticks(range(len(error_counts)))
         ax.set_xticklabels(error_counts.index, rotation=45, ha='right')
         ax.set_ylabel('Number of Records')
-        ax.set_title('Error Type Distribution', fontsize=12, fontweight='bold')
+        ax.set_title('Distribusjon av feiltyper.', fontsize=12, fontweight='bold')
         ax.grid(axis='y', alpha=0.3)
         
         for i, v in enumerate(error_counts.values):
@@ -89,14 +91,14 @@ class AccumulationErrorVisualizer:
                 start_months.append(first_error_month)
         
         if len(start_months) == 0:
-            ax.text(0.5, 0.5, 'No errors found', transform=ax.transAxes, 
+            ax.text(0.5, 0.5, 'Ingen akkumuleringsfeil funnet.', transform=ax.transAxes, 
                     ha='center', va='center')
             ax.axis('off')
             return
         
         month_counts = pd.Series(start_months).value_counts().sort_index()
         
-        month_counts = month_counts.reindex(range(1, 13), fill_value=0)
+        month_counts = month_counts.reindex(index=range(1, 13), fill_value=0)
         
         colors = "steelblue"
         
@@ -120,7 +122,7 @@ class AccumulationErrorVisualizer:
         error_records = self.df[self.df['error_type'].notna()]
         
         if len(error_records) == 0:
-            ax.text(0.5, 0.5, 'No errors found', transform=ax.transAxes, 
+            ax.text(0.5, 0.5, 'Ingen akkumuleringsfeil funnet.', transform=ax.transAxes, 
                     ha='center', va='center')
             ax.axis('off')
             return
@@ -164,7 +166,8 @@ if __name__ == "__main__":
         cfg=Config,
         years=Config.years,
         type_of_errors=Config.acc_errors,
-        total_error_prct=Config.bedrifter_med_feil
+        total_error_prct=Config.bedrifter_med_feil,
+        seed=Config.seed
     )
     
     df = make_errors.create_accumulation_errors(df=hent_data)

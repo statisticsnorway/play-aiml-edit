@@ -16,7 +16,12 @@ class BaseModel:
         self.feature_importance = None
         self.model = None
 
-    def _metrics(self, y_true, y_pred, beta=2.0):
+        self.greater_is_better = cfg.greater_is_better # precision, recall, f1_score, f2_score and f_beta should be True
+        self.eval_metric = cfg.eval_metric
+
+        self.call = True
+
+    def _metrics(self, y_true, y_pred, beta=2.0): # get beta from config
         metrics = {
             "f1_score": f1_score(y_true, y_pred, zero_division=0.0),  # pyright: ignore[reportArgumentType]
             "f2_score": fbeta_score(y_true, y_pred, beta=2.0, zero_division=0.0),  # pyright: ignore[reportArgumentType]
