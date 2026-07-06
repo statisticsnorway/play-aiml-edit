@@ -56,7 +56,18 @@ The repository therefore contains:
 
 - code for all simulations and analyses, 
 
-- metadata descriptions/synthetic examples where permitted. 
+## Input Data
+
+Due to data confidentiality, the original dataset cannot be shared. However, the methods can be applied to any dataset with a similar structure. The required input is a panel dataset containing:
+
+- **unit_id** (*string*): Unique identifier for each unit (e.g., firm or entity)
+- **period** (*datetime*): Main time variable used in the analysis (e.g., 2018-01-01)
+- **time_period** (*string or datetime*): String representation of `period`, used by the detection methods
+- **value** (*float*): Variable of interest (e.g., turnover)
+- **nace** (*string*): Industry classification code
+- **nace2** (*string*): Industry classification at the 2-digit level
+- **true_error** (*binary, optional*): Indicator of true errors (1 = error, 0 = non-error), used for evaluation
+- **year_month** (*string*): Time variable formatted as year-month
 
 Researchers wishing to apply the methods should provide data with a similar structure and variable definitions.  
 
