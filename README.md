@@ -2,44 +2,43 @@
 
 Project repository for grant on AIML4OS related to WP8 - data editing.
 
-Opprettet av:
+Created by:
 sjentoft <susiejentoft@gmail.com>
 
 ---
 
-Legg inn beskrivelse av prosjektet her.
 Repository accompanying the article: 
 
 Foss, A.H., Seierstad, A. and Mustad, R. 
 Comparing Traditional Editing Methods and Machine Learning Approaches for Outlier Detection: A Simulation Study  
 
-Purpose 
+# Purpose 
 
 This repository contains the code used to: 
 
-simulate accumulation errors in monthly turnover data, 
+- simulate accumulation errors in monthly turnover data, 
 
-construct features for machine-learning models, 
+- construct features for machine-learning models, 
 
-calibrate and train outlier-detection methods, 
+- calibrate and train outlier-detection methods, 
 
-evaluate model performance, 
+- evaluate model performance, 
 
-reproduce the results reported in the article.  
+- reproduce the results reported in the article.  
 
 The study compares four approaches to detecting accumulation errors: 
 
-Change-from-previous-period rule 
+- Change-from-previous-period rule 
 
-Hidiroglou–Berthelot (HB) method 
+- Hidiroglou–Berthelot (HB) method 
 
-Isolation Forest 
+- Isolation Forest 
 
-LightGBM  
+- LightGBM  
 
  
 
-Background 
+# Background 
 
 The study is motivated by challenges in the Norwegian Retail Sales Statistics. 
 
@@ -49,41 +48,41 @@ To evaluate alternative editing methods under controlled conditions, a simulatio
 
  
 
-Data Availability 
+# Data Availability 
 
 The original data are confidential establishment-level turnover data from Statistics Norway's Index of Wholesale and Retail Sales. These data cannot be publicly shared.  
 
 The repository therefore contains: 
 
-code for all simulations and analyses, 
+- code for all simulations and analyses, 
 
-metadata descriptions/synthetic examples where permitted. 
+- metadata descriptions/synthetic examples where permitted. 
 
 Researchers wishing to apply the methods should provide data with a similar structure and variable definitions.  
 
  
 
-Simulation Design 
+# Simulation Design 
 
 Accumulation errors were artificially introduced into otherwise cleaned turnover series. 
 
 The simulation procedure: 
 
-A fixed proportion of establishments was randomly selected. 
+- A fixed proportion of establishments was randomly selected. 
 
-One calendar year was selected for each establishment. 
+- One calendar year was selected for each establishment. 
 
-A contiguous block of months was chosen to represent an accumulation-error episode. 
+- A contiguous block of months was chosen to represent an accumulation-error episode. 
 
-Monthly turnover was replaced by cumulative turnover values over the episode. 
+- Monthly turnover was replaced by cumulative turnover values over the episode. 
 
-A binary error indicator was created to provide ground-truth labels. 
+- A binary error indicator was created to provide ground-truth labels. 
 
 This allows objective evaluation of all methods because the true error status is known.  
 
  
 
-Training and Evaluation Periods 
+# Training and Evaluation Periods 
 
 A strictly temporal split was used. 
 
@@ -97,7 +96,7 @@ This setup mimics operational production environments and avoids information lea
 
  
 
-Methods 
+# Methods 
 
 Change-from-Previous-Period 
 
@@ -119,7 +118,7 @@ Hyperparameters were optimized using Bayesian optimization (Hyperopt). Class imb
 
  
 
-Feature Engineering 
+# Feature Engineering 
 
 The machine-learning models use features derived from the turnover series. 
 
