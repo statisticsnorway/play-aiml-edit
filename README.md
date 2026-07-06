@@ -8,3 +8,141 @@ sjentoft <susiejentoft@gmail.com>
 ---
 
 Legg inn beskrivelse av prosjektet her.
+Repository accompanying the article: 
+
+Foss, A.H., Seierstad, A. and Mustad, R. 
+Comparing Traditional Editing Methods and Machine Learning Approaches for Outlier Detection: A Simulation Study  
+
+Purpose 
+
+This repository contains the code used to: 
+
+simulate accumulation errors in monthly turnover data, 
+
+construct features for machine-learning models, 
+
+calibrate and train outlier-detection methods, 
+
+evaluate model performance, 
+
+reproduce the results reported in the article.  
+
+The study compares four approaches to detecting accumulation errors: 
+
+Change-from-previous-period rule 
+
+Hidiroglou–Berthelot (HB) method 
+
+Isolation Forest 
+
+LightGBM  
+
+ 
+
+Background 
+
+The study is motivated by challenges in the Norwegian Retail Sales Statistics. 
+
+A common reporting problem is the occurrence of accumulation errors, where respondents report year-to-date turnover instead of turnover for the current reference month. Such errors may remain undetected and can substantially affect published statistics. 
+
+To evaluate alternative editing methods under controlled conditions, a simulation framework was developed using cleaned monthly turnover data from Statistics Norway. Simulated accumulation errors were then injected into the data and used as known ground truth. 
+
+ 
+
+Data Availability 
+
+The original data are confidential establishment-level turnover data from Statistics Norway's Index of Wholesale and Retail Sales. These data cannot be publicly shared.  
+
+The repository therefore contains: 
+
+code for all simulations and analyses, 
+
+metadata descriptions/synthetic examples where permitted. 
+
+Researchers wishing to apply the methods should provide data with a similar structure and variable definitions.  
+
+ 
+
+Simulation Design 
+
+Accumulation errors were artificially introduced into otherwise cleaned turnover series. 
+
+The simulation procedure: 
+
+A fixed proportion of establishments was randomly selected. 
+
+One calendar year was selected for each establishment. 
+
+A contiguous block of months was chosen to represent an accumulation-error episode. 
+
+Monthly turnover was replaced by cumulative turnover values over the episode. 
+
+A binary error indicator was created to provide ground-truth labels. 
+
+This allows objective evaluation of all methods because the true error status is known.  
+
+ 
+
+Training and Evaluation Periods 
+
+A strictly temporal split was used. 
+
+Period, Purpose 
+
+January 2018 – December 2023, Training and calibration 
+
+January 2024 – April 2025, Independent evaluation 
+
+This setup mimics operational production environments and avoids information leakage from future periods.  
+
+ 
+
+Methods 
+
+Change-from-Previous-Period 
+
+Observations are flagged when turnover increases beyond a calibrated threshold relative to the previous month. Candidate thresholds were calibrated on historical data.  
+
+Hidiroglou–Berthelot 
+
+The HB method uses period-to-period ratios combined with establishment size information to identify unusual changes. Parameters were calibrated separately by industry group and month pair.  
+
+Isolation Forest 
+
+Isolation Forest was used as an unsupervised anomaly-detection method. The contamination parameter was selected using historical calibration data.  
+
+LightGBM 
+
+LightGBM was trained as a supervised classification model using simulated error labels. 
+
+Hyperparameters were optimized using Bayesian optimization (Hyperopt). Class imbalance was handled through class weighting.  
+
+ 
+
+Feature Engineering 
+
+The machine-learning models use features derived from the turnover series. 
+
+Feature groups include: 
+
+month and year indicators, 
+
+month-to-month changes, 
+
+year-over-year changes, 
+
+lagged turnover values, 
+
+rolling means, 
+
+rolling medians, 
+
+rolling standard deviations, 
+
+ratios to rolling averages, 
+
+z-scores, 
+
+coefficients of variation.  
+
+These variables were designed to capture trends, seasonality, volatility and reporting irregularities. 
