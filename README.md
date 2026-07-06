@@ -124,24 +124,24 @@ The machine-learning models use features derived from the turnover series.
 
 Feature groups include: 
 
-month and year indicators, 
+- month and year indicators, 
 
-month-to-month changes, 
+- month-to-month changes, 
 
-year-over-year changes, 
+- year-over-year changes, 
 
-lagged turnover values, 
+- lagged turnover values, 
 
-rolling means, 
+- rolling means, 
 
-rolling medians, 
+- rolling medians, 
 
-rolling standard deviations, 
+- rolling standard deviations, 
 
-ratios to rolling averages, 
+- ratios to rolling averages, 
 
-z-scores, 
+- z-scores, 
 
-coefficients of variation.  
+- coefficients of variation.  
 
 These variables were designed to capture trends, seasonality, volatility and reporting irregularities. 
