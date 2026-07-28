@@ -9,9 +9,12 @@ from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 from base_model import BaseModel
 from create_accumulation_error import AccumulationErrors
 from load_data import get_all_data
-from time_features import create_features, prepare_data
+from time_features import create_features, prepare_data_with_test
 from config import Config  # pyright: ignore[reportAttributeAccessIssue]
 from post_processing import postprocess_consecutive
+
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="hyperopt")
 
 def f1_eval_metric(preds, train_data):
     labels = train_data.get_label()
@@ -76,19 +79,16 @@ class AccumulationLGBM(BaseModel):
         
         return best_params
     
-    def fit_predict(
-        self, scale_pos_weight=None, **kwargs,
-    ):
-
-        X_train, X_valid, y_train, y_valid, feature_cols = prepare_data(
-            df=self.df,
-            cfg=self.cfg,
-        )
+    def fit_predict(self, scale_pos_weight=None, eval_on="valid", **kwargs):
+        data = prepare_data_with_test(df=self.df, cfg=self.cfg)
+        X_train, y_train = data["X_train"], data["y_train"]
+        X_valid, y_valid = data["X_valid"], data["y_valid"]
+        feature_cols = data["feature_cols"]
 
         if self.call:
             self._statistics(X_train, y_train, X_valid, y_valid)
             self.call = False
-        
+
         if scale_pos_weight is None:
             n_negative = (y_train == 0).sum()
             n_positive = (y_train == 1).sum()
@@ -109,35 +109,41 @@ class AccumulationLGBM(BaseModel):
             eval_metric='average_precision',
         )
 
-        y_pred = self.model.predict(X=X_valid)
-        
+        X_eval = data[f"X_{eval_on}"]
+        y_eval = data[f"y_{eval_on}"]
+        y_pred = self.model.predict(X=X_eval)
+
         self.feature_importance = pd.DataFrame(data={
             'feature': feature_cols,
             'importance': self.model.feature_importances_
         }).sort_values('importance', ascending=False)
-        
+
         return {
-            "y_true": y_valid.values,
+            "y_true": y_eval.values,
             "y_pred": y_pred,
-            "X_valid": X_valid,
-            "feature_importance": self.feature_importance
+            "X_eval": X_eval,
+            "eval_mask": data["masks"][eval_on],
+            "eval_on": eval_on,
+            "feature_importance": self.feature_importance,
         }
-    
-    def evaluate(self, beta=0.5, show_feature_importance=True, top_n=15, max_evals=100, **kwargs):
+
+    def evaluate(self, beta=0.5, show_feature_importance=True, top_n=15, max_evals=100, eval_on="test", **kwargs):
 
         best_params = self.optimize_hyperparameters(max_evals=max_evals, beta=beta)
         kwargs.update(best_params)
-        
-        results = self.fit_predict(**kwargs)
-        
+
+        results = self.fit_predict(eval_on=eval_on, **kwargs)
+
         metrics = self._metrics(
-            y_true=results["y_true"], 
+            y_true=results["y_true"],
             y_pred=results["y_pred"],
             beta=beta
         )
-        
+
+        df_eval = self.df[results["eval_mask"]].reset_index(drop=True)
+
         y_pred_filtered = postprocess_consecutive(
-            df=self.df[self.df[self.cfg.dato] >= pd.to_datetime(self.cfg.split_date)].reset_index(drop=True),
+            df=df_eval,
             y_pred=results["y_pred"],
             cfg=self.cfg,
             min_duration=self.cfg.min_duration,
@@ -150,21 +156,19 @@ class AccumulationLGBM(BaseModel):
             beta=beta,
         )
 
-        
         if show_feature_importance and self.feature_importance is not None:
             print(f"\nTopp {top_n} variabler:")
             print(self.feature_importance.head(n=top_n).to_string(index=False))
 
-        print("Resultater før post-processing")
+        print(f"\nResultater på {eval_on}-settet:")
+        print("Før post-processing:")
         for k, v in metrics.items():
             print(f"  {k}: {v:.4f}")
 
-        print("Resultater etter post-processing:")
+        print("Etter post-processing:")
         for k, v in metrics_filtered.items():
             print(f"  {k}: {v:.4f}")
 
-        # n_removed = int(results["y_pred"].sum() - y_pred_filtered.sum())
-            
         return metrics, results
 
 if __name__ == "__main__":

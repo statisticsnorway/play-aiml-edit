@@ -26,8 +26,9 @@ class Config:
 
     # Modell parametere
     min_periods = 1
-    split_date = "2024-01-01"
+    split_date = "2023-01-01"   # train < split_date <= validation
+    test_date = "2024-01-01"    # validation < test_date <= test
 
     # Training parameters
-    eval_metric = "recall" # precision, recall, f1_score, f_beta, f2_score, loss (what losses are possible?)
+    eval_metric = "f1_score" # precision, recall, f1_score, f_beta, f2_score, loss (what losses are possible?)
     greater_is_better = True

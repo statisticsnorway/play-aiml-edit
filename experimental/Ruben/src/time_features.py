@@ -71,6 +71,56 @@ def prepare_data(df, cfg):
 
     return X_train, X_valid, y_train, y_valid, feature_cols
 
+
+def prepare_data_with_test(df, cfg):
+    """
+    Lager trening-, validerings- og testsett.
+
+    train:  dato <  cfg.split_date
+    valid:  cfg.split_date <= dato < cfg.test_date
+    test:   dato >= cfg.test_date
+    """
+    feature_cols = [
+        cfg.omsetning,
+        "mom_change", "mom_pct_change",
+        "yoy_change", "yoy_pct_change", "ratio_to_last_year",
+        "rolling_mean_3m", "rolling_mean_6m", "rolling_mean_9m", "rolling_mean_12m",
+        "rolling_median_3m", "rolling_median_6m", "rolling_median_9m", "rolling_median_12m",
+        "ratio_to_3m_mean", "ratio_to_6m_mean", "ratio_to_12m_mean",
+        "zscore_3m", "zscore_6m",
+        "turnover_lag_1", "turnover_lag_2", "turnover_lag_3", "turnover_lag_6", "turnover_lag_12",
+        "cv_3m", "cv_12m", "month",
+    ]
+
+    X = df[feature_cols].copy()
+    X = X.fillna(0).replace([np.inf, -np.inf], 0)
+    Y = df[cfg.error_col]
+    dates = df[cfg.dato]
+
+    valid_start = pd.to_datetime(cfg.split_date)
+    test_start = pd.to_datetime(getattr(cfg, "test_date", "2024-01-01"))
+
+    if test_start <= valid_start:
+        raise ValueError("cfg.test_date må være etter cfg.split_date")
+
+    masks = {
+        "train": dates < valid_start,
+        "valid": (dates >= valid_start) & (dates < test_start),
+        "test": dates >= test_start,
+    }
+
+    for name, mask in masks.items():
+        if not mask.any():
+            raise ValueError(f"{name}-settet er tomt. Sjekk split_date/test_date.")
+
+    return {
+        "X_train": X[masks["train"]], "y_train": Y[masks["train"]],
+        "X_valid": X[masks["valid"]], "y_valid": Y[masks["valid"]],
+        "X_test": X[masks["test"]], "y_test": Y[masks["test"]],
+        "masks": masks,
+        "feature_cols": feature_cols,
+    }
+
 def normalize_by_company(df_train, df_valid, bedrift, omsetning):
     absolute_features = [
         omsetning,
