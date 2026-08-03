@@ -5,13 +5,9 @@ import lightgbm as lgb
 from sklearn.metrics import f1_score
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
 
-
-from base_model import BaseModel
-from create_accumulation_error import AccumulationErrors
-from load_data import get_all_data
-from time_features import create_features, prepare_data_with_test
-from config import Config  # pyright: ignore[reportAttributeAccessIssue]
-from post_processing import postprocess_consecutive
+from src.models.base_model import BaseModel
+from src.data.time_features import prepare_data_with_test
+from src.models.post_processing import postprocess_consecutive
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="hyperopt")
@@ -178,39 +174,3 @@ class AccumulationLGBM(BaseModel):
             metrics, results = self.show_results(
                 beta, results, show_feature_importance, top_n, eval_on
             )
-        
-        return _, _
-
-if __name__ == "__main__":
-    time_start = time.time()
-
-    print("Henter ut data fra VHI")
-    hent_data = get_all_data(cfg=Config)
-    
-    print("Lager akkumuleringsfeil")
-    make_errors = AccumulationErrors(
-        cfg=Config,
-        years=Config.years,
-        type_of_errors=Config.acc_errors,
-        total_error_prct=Config.bedrifter_med_feil,
-        seed=Config.seed
-    )   
-    
-    df = make_errors.create_accumulation_errors(df=hent_data)
-    
-    print("Lager tidsvariabler")
-    df = create_features(
-        df=df,
-        bedrift=Config.bedrift,
-        omsetning=Config.omsetning,
-        dato=Config.dato,
-        min_periods=Config.min_periods
-    )
-    
-    lgbm_detector = AccumulationLGBM(df=df, cfg=Config)
-
-    print("Trener LightGBM")
-    metrics, results = lgbm_detector.evaluate()
-
-    time_end = time.time()
-    print(f"Tid: {(time_end - time_start) / 60} minutter")
