@@ -166,11 +166,19 @@ class AccumulationLGBM(BaseModel):
         best_params = self.optimize_hyperparameters(max_evals=max_evals, beta=beta)
         kwargs.update(best_params)
 
-
         evaluations = ["valid", "test"]
-        for eval_on in evaluations:
-            results = self.fit_predict(eval_on=eval_on, **kwargs)
+
+        scores = {}
+        for eval_on_ in evaluations:
+            results = self.fit_predict(eval_on=eval_on_, **kwargs)
 
             metrics, results = self.show_results(
-                beta, results, show_feature_importance, top_n, eval_on
+                beta, results, show_feature_importance, top_n, eval_on_
             )
+
+            scores[eval_on_] = {
+                "results": results,
+                "metrics": metrics,
+            }
+
+        return scores
