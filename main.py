@@ -14,7 +14,7 @@ from src.accumulation_error import AccumulationErrors
 # TODO: option for specific method or run all methods?
 
 if __name__ == "__main__":
-    print("Get data_")
+    print("Get data:")
     try:
         hent_data = get_all_data(cfg=Config)
     except Exception as e:
@@ -24,7 +24,7 @@ if __name__ == "__main__":
             years=range(min(Config.years), max(Config.years) + 1),
             seed=Config.seed,
         )
-    
+
     print("Creating accumulation errors:")
     make_errors = AccumulationErrors(
         cfg=Config,
