@@ -79,7 +79,9 @@ if __name__ == "__main__":
     lgbm_detector = AccumulationLGBM(df=df.copy(), cfg=Config)
 
     print("Training LightGBM:")
-    lgbm_scores = lgbm_detector.evaluate(show_feature_importance=False, max_evals=10)
+    lgbm_scores = lgbm_detector.evaluate(
+        show_feature_importance=False, max_evals=100
+    )
     add_rows("LightGBM", lgbm_scores)
 
     print("Training Isolation Forest:")
