@@ -1,6 +1,4 @@
-import time
 import pandas as pd
-import numpy as np
 import lightgbm as lgb
 from sklearn.metrics import f1_score
 from hyperopt import hp, fmin, tpe, Trials, STATUS_OK, space_eval
@@ -150,14 +148,14 @@ class AccumulationLGBM(BaseModel):
             print(f"\nTopp {top_n} variabler:")
             print(self.feature_importance.head(n=top_n).to_string(index=False))
 
-        print(f"\nResultater på {eval_on}-settet:")
-        print("Før post-processing:")
-        for k, v in metrics.items():
-            print(f"  {k}: {v:.4f}")
+        # print(f"\nResultater på {eval_on}-settet:")
+        # print("Før post-processing:")
+        # for k, v in metrics.items():
+        #     print(f"  {k}: {v:.4f}")
 
-        print("Etter post-processing:")
-        for k, v in metrics_filtered.items():
-            print(f"  {k}: {v:.4f}")
+        # print("Etter post-processing:")
+        # for k, v in metrics_filtered.items():
+        #     print(f"  {k}: {v:.4f}")
 
         return metrics, results
 
