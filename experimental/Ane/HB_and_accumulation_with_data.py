@@ -423,7 +423,7 @@ df_metrics_accumulation_final = pd.DataFrame()
 group_var = "nace2_t2"
 
 # Optional subset selection (e.g. specific industry)
-selected_group = "00"
+selected_group = "45"
 
 # Parameter grids
 U_VALUES = [0.2, 0.5, 0.9]
