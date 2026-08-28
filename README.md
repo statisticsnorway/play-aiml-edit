@@ -94,7 +94,7 @@ Calibration periods varied by method:
 - **Change-from-Previous-Period**, **Hidiroglou–Berthelot (HB)**, and **Isolation Forest** were calibrated using data from **January 2018 to December 2023**.
 - For **LightGBM**, data from **January 2018 to December 2022** were used for model training, while **January 2023 to December 2023** was used for hyperparameter tuning and model calibration.
  
-The independent evaluation period covered **January 2024 to April 2025**.
+- The independent evaluation period covered **January 2024 to April 2025**.
  
 This setup mimics an operational production environment and prevents information leakag 
 
