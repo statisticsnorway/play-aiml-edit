@@ -68,10 +68,8 @@ Due to data confidentiality, the original dataset cannot be shared. However, the
 - **nace2** (*string*): Industry classification at the 2-digit level
 - **true_error** (*binary, optional*): Indicator of true errors (1 = error, 0 = non-error), used for evaluation
 - **year_month** (*string*): Time variable formatted as year-month
-
-Researchers wishing to apply the methods should provide data with a similar structure and variable definitions.  
-
  
+Synthetic data is made for users without access to the confidential source data. 
 
 # Simulation Design 
 
@@ -91,21 +89,48 @@ The simulation procedure:
 
 This allows objective evaluation of all methods because the true error status is known.  
 
- 
+# Training and Evaluation Periods
+ 
+A strictly temporal split was used throughout the study.
+ 
+Calibration periods varied by method:
+ 
+- **Change-from-Previous-Period**, **Hidiroglou–Berthelot (HB)**, and **Isolation Forest** were calibrated using data from **January 2018 to December 2023**.
+- For **LightGBM**, data from **January 2018 to December 2022** were used for model training, while **January 2023 to December 2023** was used for hyperparameter tuning and model calibration.
+ 
+The independent evaluation period covered **January 2024 to April 2025**.
+ 
+This setup mimics an operational production environment and prevents information leakag 
 
-# Training and Evaluation Periods 
+# Repository Structure
+ 
+The main workflow is executed in the following order within the `src` directory:
+ 
+1. **data/**
+- Load and prepare input data.
+- Feature engineering and data preparation routines.
+- Generate synthetic data for users without access to the confidential source data.
+ 
+2. **accumulation_error/**
+- Simulate accumulation errors.
+- Create ground-truth error labels used for model evaluation.
+ 
+3. **functions/**
+- Utility functions used throughout the project.
 
-A strictly temporal split was used. 
+ 
+4. **models/**
+- Train, calibrate, and evaluate the machine-learning models:
+- Isolation Forest
+- LightGBM
+ 
+5. **HB_and_accumulation_models/**
+- Calibrate parameters for the traditional editing methods.
+- Run the Hidiroglou–Berthelot (HB) method.
+- Run the Change-from-Previous-Period method.
+- Compare model and rule-based approaches.
 
-Period, Purpose 
 
-January 2018 – December 2023, Training and calibration 
-
-January 2024 – April 2025, Independent evaluation 
-
-This setup mimics operational production environments and avoids information leakage from future periods.  
-
- 
 
 # Methods 
 
