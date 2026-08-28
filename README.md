@@ -50,11 +50,8 @@ To evaluate alternative editing methods under controlled conditions, a simulatio
 
 # Data Availability 
 
-The original data are confidential establishment-level turnover data from Statistics Norway's Index of Wholesale and Retail Sales. These data cannot be publicly shared.  
+The original data are confidential establishment-level turnover data from Statistics Norway's Index of Wholesale and Retail Sales. These data cannot be publicly shared. Synthetic data is made for users without access to the confidential source data.  
 
-The repository therefore contains: 
-
-- code for all simulations and analyses, 
 
 ## Input Data
 
@@ -69,7 +66,6 @@ Due to data confidentiality, the original dataset cannot be shared. However, the
 - **true_error** (*binary, optional*): Indicator of true errors (1 = error, 0 = non-error), used for evaluation
 - **year_month** (*string*): Time variable formatted as year-month
  
-Synthetic data is made for users without access to the confidential source data. 
 
 # Simulation Design 
 
